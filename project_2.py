@@ -1,13 +1,19 @@
-# imports requred for program
+#####################################################################
+# Author: Zack Taylor
+# Class: NE 571
+# Assignment: Project 6
+#####################################################################
+
+# Libraries
 import numpy as np
 import scipy.special as sp
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-# Function that returns r(i) the radious at node i
-
-# Indexed as region then group. Example region 1 group 1,region 2 group 1 ect. 
-
+#####################################################################
+# Material class for calling material properties based on where
+# you are in the reactor (radius)
+#####################################################################
 class Material(object):
 
     def __init__(self,sigTr,siga,vsig,D):
@@ -85,6 +91,9 @@ class Material(object):
         elif gp == "thermal" and r(i) <= R_1:
             vsig = self.vsig_[1]
 
+#####################################################################
+# Functions used in the progrm 
+#####################################################################
 def r(i):
     x = i*delR_1
     x2 = i*delR_2
@@ -246,6 +255,9 @@ def b_matrix_gen(B,b):
             if (Ni-1)*(Nk-2)-Ni+1 <= h < (Ni-1)*(Nk-2):
                 B[h][h] = b(h-(u+1)*(Ni-1))
 
+#####################################################################
+# Main program 
+#####################################################################
 
 # Nodal condutions 
 num_reg = 2 # Number of regions in the problem
@@ -276,8 +288,6 @@ D_ = [1.2627,1.13,0.3543,0.16]
 
 # Initialize material class
 material = Material(sigTr_,siga_,vsig_,D_)
-
-
 
 # A matrix
 A_f = np.zeros(shape=(num_row_r1,num_col_r1))
