@@ -11,85 +11,48 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 #####################################################################
-# Material class for calling material properties based on where
-# you are in the reactor (radius)
+# Material class for calling material properties
 #####################################################################
 class Material(object):
 
-    def __init__(self,sigTr,siga,vsig,D):
-        self.sigTr_ = sigTr_
-        self.siga_ = siga_
-        self.vsig_ = vsig_
-        self.D_ = D_
+    def __init__(self,sigTr,siga,vsig,D,radius,element):
+        self.sigTr_ = sigTr
+        self.siga_ = siga
+        self.vsig_ = vsig
+        self.D_ = D
+        self.radius = radius
+        self.element = element
 
-    def D(self,i,gp):
-        if gp == "fast" and r(i) < R_1:
+    def __str__(self):
+        return self.element
+
+    def GetD(self,i,gp):
+        if gp == "fast":
             D = self.D_[0]
-        elif gp == "fast" and r(i) > R_1:
+        if gp == "thermal":
             D = self.D_[1]
-        elif gp == "thermal" and r(i) < R_1:
-            D = self.D_[2]
-        elif gp == "thermal" and r(i) > R_1:
-            D = self.D_[3]
-        elif gp == "fast" and r(i) == R_1:
-            D1 = self.D_[0]
-            D2 = self.D_[1]
-        elif gp == "thermal" and r(i) == R_1:
-            D1 = self.D_[2]
-            D2 = self.D_[3]
+        return D
 
-        if r(i) == R_1:
-            return D1,D2
-        else:
-            return D
-
-    def sigTr(self,i,gp):
-        if gp == "fast" and r(i) < R_1:
+    def GetsigTr(self,i,gp):
+        if gp == "fast":
             sigTr = self.sigTr_[0]
-        elif gp == "fast" and r(i) > R_1:
+        if gp == "thermal":
             sigTr = self.sigTr_[1]
-        elif gp == "thermal" and r(i) < R_1:
-            sigTr = self.sigTr_[2]
-        elif gp == "thermal" and r(i) > R_1:
-            sigTr = self.sigTr_[3]
-        elif gp == "fast" and r(i) == R_1:
-            sigTr1 = self.sigTr_[0]
-            sigTr2 = self.sigTr_[1]
-        elif gp == "thermal" and r(i) == R_1:
-            sigTr1 = self.sigTr_[2]
-            sigTr2 = self.sigTr_[3]
+        return sigTr
 
-        if r(i) == R_1:
-            return sigTr1,sigTr2
-        else:
-            return sigTr
-
-    def siga(self,i,gp):
-        if gp == "fast" and r(i) < R_1:
+    def Getsiga(self,i,gp):
+        if gp == "fast":
             siga = self.siga_[0]
-        elif gp == "fast" and r(i) > R_1:
+        if gp == "thermal":
             siga = self.siga_[1]
-        elif gp == "thermal" and r(i) < R_1:
-            siga = self.siga_[2]
-        elif gp == "thermal" and r(i) > R_1:
-            siga = self.siga_[3]
-        elif gp == "fast" and r(i) == R_1:
-            siga1 = self.siga_[0]
-            siga2 = self.siga_[1]
-        elif gp == "thermal" and r(i) == R_1:
-            siga1 = self.siga_[2]
-            siga2 = self.siga_[3]
+        return siga
 
-        if r(i) == R_1:
-            return siga1,siga2
-        else:
-            return siga
-
-    def vsig(self,i,gp):
-        if gp == "fast" and r(i) <= R_1:
+    def Getvsig(self,i,gp):
+        if gp == "fast":
             vsig = self.vsig_[0]
-        elif gp == "thermal" and r(i) <= R_1:
+        elif gp == "thermal":
             vsig = self.vsig_[1]
+
 
 #####################################################################
 # Functions used in the progrm 
@@ -100,76 +63,158 @@ def r(i):
     if x < R_1:
         return x
     elif x >= R_1:
-        return R_1 + (i-Nii)*delR_2
+        return R_1 + (i-Ni+1)*delR_2
+
+# Function that returns the material or materials given node i
+# Uses the r function to return a system radius value. Heart of
+# the program
+def GetMaterial(i):
+    r_ = []
+    temp = 0.0
+    InterfaceValues = []
+    NumberOfFuelElements = len(LoadingPattern)
+
+    for k in xrange(NumberOfFuelElements):
+        temp = temp + LoadingPattern[k].radius
+        r_.append(LoadingPattern[k].radius)
+        InterfaceValues.append(temp)
+
+    for n,k in enumerate(InterfaceValues):
+        if r(i) < r_[0]:
+            return LoadingPattern[0]
+        if InterfaceValues[n-1] < r(i) < InterfaceValues[n]:
+            return LoadingPattern[n]
+        if r(i) > max(InterfaceValues):
+            return Water
+
+    for n,k in enumerate(InterfaceValues):
+        if r(i) == InterfaceValues[0]:
+            return LoadingPattern[0], LoadingPattern[1]
+        if r(i) == InterfaceValues[n] and n != (len(InterfaceValues)-1):
+            return LoadingPattern[n],LoadingPattern[n+1]
+        if r(i) == max(InterfaceValues):
+            return LoadingPattern[(len(InterfaceValues)-1)],Water
+
+def IsInterface(i):
+    InterfaceValues = []
+    Interface = False
+    temp = 0.0
+    NumberOfFuelElements = len(LoadingPattern)
+    for k in xrange(NumberOfFuelElements):
+        temp = temp + LoadingPattern[k].radius
+        InterfaceValues.append(temp)
+
+    for k in InterfaceValues:
+        if r(i) == k:
+            Interface = True
+
+    return Interface
+
+def FuelRegionLength(LoadingPattern):
+    temp = 0.0
+    NumberOfFuelElements = len(LoadingPattern)
+
+    for k in xrange(NumberOfFuelElements):
+        temp = temp + LoadingPattern[k].radius
+    return temp 
+
+def MeshGeneration(NumberOfCellsFuelElementRadius,NumberOfCellsWaterRadius):
+    cE = NumberOfCellsFuelElementRadius
+    cW = NumberOfCellsWaterRadius
+
+    Ni = len(LoadingPattern)*cE + 1 #Number of nodes in fuel region. Includes 
+    # fuel water interface
+    Nii = cW #Does not include fuel water interface
+
+    Nitot = Ni + Nii
+
+    return Ni,Nii,Nitot
 
 def a1(i,gp):
-    if r(i) == 0:
-        return -material.D(i,gp)*(delR_1**3)/8
-    elif (0 < r(i) < R_1 or r(i) > R_1):
-        return -material.D(i,gp)*r(i)*delR_1**2
-    elif r(i) == R_1:
-        D1,D2 = material.D(i,gp)
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            return -material.GetD(i,gp)*(delR_1**3)/8
+        elif (0 < r(i) < R_1 or r(i) > R_1):
+            return -material.GetD(i,gp)*r(i)*delR_1**2
+
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        D1 = Leftmaterial.GetD(i,gp)
+        D2 = Rightmaterial.GetD(i,gp)
         return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8))
     
 def a2(i,gp):
-    if 0 < r(i) < R_1 or r(i) > R_1:
-        #return 2
-        return -material.D(i,gp)*(r(i)-(delR_1/2))*delZ**2
-    elif r(i) == R_1:
-        D1,D2 = material.D(i,gp)
-        #return 10
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            return -material.GetD(i,gp)*(delR_1**3)/8
+        if 0 < r(i) < R_1 or r(i) > R_1:
+            return -material.GetD(i,gp)*(r(i)-(delR_1/2))*delZ**2
+
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        D1 = Leftmaterial.GetD(i,gp)
+        D2 = Rightmaterial.GetD(i,gp)
         return (-D1/delR_1)*(r(i)-delR_1/2)*delZ
-    elif r(i) == 0:
-        #return 2
-        return -material.D(i,gp)*(delR_1**3)/8
     
 def a3(i,gp):
-    if r(i) == 0:
-        #return 3
-        return material.siga(i,gp)*((delR_1**3)/8)*(delZ**2) + 2*material.D(i,gp)*(delR_1**3)/8 + material.D(i,gp)*(delR_1/2)*delZ**2
-    elif 0 < r(i) < R_1 or r(i) > R_1:
-        #return 3
-        return material.siga(i,gp)*r(i)*delR_1**2*delZ**2 + 2*material.D(i,gp)*r(i)*delR_1**2 + 2*material.D(i,gp)*r(i)*delZ**2 #check this equation
-    elif r(i) == R_1:
-        D1,D2 = material.D(i,gp)
-        siga1,siga2 = material.siga(i,gp)
-        sigTr1,sigTr2 = material.sigTr(i,gp)
-        #return 10
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            #return 3
+            return material.Getsiga(i,gp)*((delR_1**3)/8)*(delZ**2) + 2*material.GetD(i,gp)*(delR_1**3)/8 + material.GetD(i,gp)*(delR_1/2)*delZ**2
+        elif 0 < r(i) < R_1 or r(i) > R_1:
+            #return 3
+            return material.Getsiga(i,gp)*r(i)*delR_1**2*delZ**2 + 2*material.GetD(i,gp)*r(i)*delR_1**2 + 2*material.GetD(i,gp)*r(i)*delZ**2 #check this equation
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        D1 = Leftmaterial.GetD(i,gp)
+        D2 = Rightmaterial.GetD(i,gp)
+        siga1 = Leftmaterial.Getsiga(i,gp)
+        siga2 = Rightmaterial.Getsiga(i,gp)
+        sigTr1 = Leftmaterial.GetsigTr(i,gp)
+        sigTr2 = Rightmaterial.GetsigTr(i,gp)
         return (D1/delR_1)*(r(i)-delR_1/2)*delZ + (2*D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + siga1*delZ*((r(i)*delR_1/2) + (delR_1**2/8)) + (D2/delR_2)*(r(i)-delR_2/2)*delZ + (2*D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8)) + siga2*delZ*((r(i)*delR_2/2) + (delR_2**2/8))
 
 def a4(i,gp):
-    if r(i) == 0 and (gp == "thermal" or gp == "fast"):
-        #return 4
-        return -material.D(i,gp)*(delR_1/2)*delZ**2
-    elif (0 < r(i) < R_1 or r(i) > R_1) and (gp == "fast" or gp == "thermal"):
-        #return 4
-        return -material.D(i,gp)*(r(i) + delR_1/2)*delZ**2
-    elif r(i) == R_1:
-        D1,D2 = material.D(i,gp)
-        siga1,siga2 = material.siga(i,gp)
-        sigTr1,sigTr2 = material.sigTr(i,gp)
-
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            #return 4
+            return -material.GetD(i,gp)*(delR_1/2)*delZ**2
+        elif (0 < r(i) < R_1 or r(i) > R_1):
+            #return 4
+            return -material.GetD(i,gp)*(r(i) + delR_1/2)*delZ**2
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        D1 = Leftmaterial.GetD(i,gp)
+        D2 = Rightmaterial.GetD(i,gp)
         return (-D2/delR_1)*(r(i)-delR_1/2)*delZ
 
 def a5(i,gp):
-    if r(i) == 0:
-        #return 5
-        return -material.D(i,gp)*(delR_1**3)/8
-    elif 0 < r(i) < R_1 or r(i) > R_1:
-        #return 5
-        return -material.D(i,gp)*r(i)*delR_1**2
-    elif r(i) == R_1:
-        D1,D2 = material.D(i,gp)
-        siga1,siga2 = material.siga(i,gp)
-        sigTr1,sigTr2 = material.sigTr(i,gp)
-        #return 10
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            return -material.GetD(i,gp)*(delR_1**3)/8
+        elif 0 < r(i) < R_1 or r(i) > R_1:
+            return -material.GetD(i,gp)*r(i)*delR_1**2
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        D1 = Leftmaterial.GetD(i,gp)
+        D2 = Rightmaterial.GetD(i,gp)
+        siga1 = Leftmaterial.Getsiga(i,gp)
+        siga2 = Rightmaterial.Getsiga(i,gp)
+        sigTr1 = Leftmaterial.GetsigTr(i,gp)
+        sigTr2 = Rightmaterial.GetsigTr(i,gp)
         return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8))
       
 def b_fis_therm(i):
+    material = GetMaterial(i)
     if r(i) == 0:
-        return material.vsig(i,gp)*((delR_1**3)/8)*delZ**2
+        return material.Getvsig(i,gp)*((delR_1**3)/8)*delZ**2
     elif r(i) <= R_1:
-        return material.vsig(i,gp)*delZ**2*r(i)*delR_1**2
+        return material.Getvsig(i,gp)*delZ**2*r(i)*delR_1**2
     else:
         return 0.0
     
@@ -259,35 +304,45 @@ def b_matrix_gen(B,b):
 # Main program 
 #####################################################################
 
-# Nodal condutions 
-num_reg = 2 # Number of regions in the problem
-Ni = 10 # Number of nodes in the r direction, total
-Nk = 10 # Number of nodes in the k direction, total
-Nii = 5 # Number of nodes in the r direction reflector region
-Niii = 5 # Number of nodes in the r direction fuel region
+AsigTr_ = [3.62e-2,0.0494]
+Asiga_ = [0.01207,0.0004]
+Avsig_ = [0.008476,0.18514]
+AD_ = [1.2627,1.13]
+rad = 20.0
 
-Z = 333.2  # height of the reactor
-R_1 = Z/2  # radious of the reactor
-R_2 = 50.0 # radious of the reflector
-num_row_r1 = (Ni-1)*(Nk-2)
-num_col_r1 = (Ni-1)*(Nk-2)
+BsigTr_ = [3.62e-2,0.0494]
+Bsiga_ = [0.01207,0.0004]
+Bvsig_ = [0.008476,0.18514]
+BD_ = [1.2627,1.13]
+rad = 20.0
 
+CsigTr_ = [3.62e-2,0.0494]
+Csiga_ = [0.01207,0.0004]
+Cvsig_ = [0.008476,0.18514]
+CD_ = [1.2627,1.13]
+rad = 20.0
 
-delR_1 = R_1/(Niii-1)
-delR_2 = R_2/(Nii-1)
+FuelA = Material(AsigTr_,Asiga_,Avsig_,AD_,rad,"FuelA")
+FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BD_,rad,"FuelB")
+FuelC = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"FuelC")
+Water = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"Water")
+
+LoadingPattern = [FuelA,FuelB,FuelC]
+
+Z = 100.0  # height of the reactor
+R_1 = 60.0  # radious of the reactor
+R_2 = 20.0 # radious of the reflector
+Ni,Nii,Nitot = MeshGeneration(2,4)
+Nk = 6
+i0 = Nitot
+
+num_row_r1 = (Nitot-1)*(Nk-2)
+num_col_r1 = (Nitot-1)*(Nk-2)
+
+delR_1 = FuelRegionLength(LoadingPattern)/(Ni-1)
+delR_2 = R_2/(Nii)
 delZ = Z/Nk
 
-# Variables
-i0 = Ni-3
-
-# Indexed as region then group. Example region 1 group 1,region 2 group 1 ect. 
-sigTr_ = [3.62e-2,0.0494,0.1,0.1]
-siga_ = [0.01207,0.0004,0.1,0.1]
-vsig_ = [0.008476,0.18514]
-D_ = [1.2627,1.13,0.3543,0.16]
-
-# Initialize material class
-material = Material(sigTr_,siga_,vsig_,D_)
 
 # A matrix
 A_f = np.zeros(shape=(num_row_r1,num_col_r1))
