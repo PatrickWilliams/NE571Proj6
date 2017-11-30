@@ -52,6 +52,7 @@ class Material(object):
             vsig = self.vsig_[0]
         elif gp == "thermal":
             vsig = self.vsig_[1]
+        return vsig
 
 
 #####################################################################
@@ -88,6 +89,8 @@ def GetMaterial(i):
             return Water
 
     for n,k in enumerate(InterfaceValues):
+        if r(i) == InterfaceValues[0] and len(LoadingPattern) == 1:
+            return LoadingPattern[0],Water
         if r(i) == InterfaceValues[0]:
             return LoadingPattern[0], LoadingPattern[1]
         if r(i) == InterfaceValues[n] and n != (len(InterfaceValues)-1):
@@ -205,22 +208,34 @@ def a5(i,gp):
         sigTr2 = Rightmaterial.GetsigTr(i,gp)
         return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8))
       
-def b_fis_therm(i):
-    material = GetMaterial(i)
-    if r(i) == 0:
-        return material.Getvsig(i,gp)*((delR_1**3)/8)*delZ**2
-    elif r(i) <= R_1:
-        return material.Getvsig(i,gp)*delZ**2*r(i)*delR_1**2
-    else:
-        return 0.0
+def b_fis_term(i,gp):
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            return material.Getvsig(i,gp)*((delR_1**3)/8)*delZ**2
+        elif r(i) < R_1:
+            return material.Getvsig(i,gp)*delZ**2*r(i)*delR_1**2
+        else:
+            return 0.0
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        vsig1 = Leftmaterial.Getvsig(i,gp)
+        vsig2 = Rightmaterial.Getvsig(i,gp)
+        return vsig1*delZ**2*r(i)*delR_1**2
     
-def b_source_therm(i):
-    if r(i) == 0:
-        return sigTrR_1*((delR_1**3)/8)*delZ**2
-    elif r(i) <= R_1:
-        return sigTrR_1*delZ**2*r(i)*delR_1**2
-    elif (r(i) > R_1):
-        return sigTrR_2*delZ**2*r(i)*delR_2**2
+def b_down_term(i,gp):
+    if IsInterface(i) == False:
+        material = GetMaterial(i)
+        if r(i) == 0:
+            return material.GetsigTr(i,gp)*((delR_1**3)/8)*delZ**2
+        else: 
+            return material.GetsigTr(i,gp)*delZ**2*r(i)*delR_1**2
+    elif IsInterface(i) == True:
+        Leftmaterial,Rightmaterial = GetMaterial(i)
+        sigTr1 = Leftmaterial.GetsigTr(i,gp)
+        sigTr2 = Rightmaterial.GetsigTr(i,gp)
+        return sigTr1*delZ**2*r(i)*delR_1**2 + sigTr2*delZ**2*r(i)*delR_2**2
+
 
 def a_matrix_gen(A,i,k,rg,gp):
     for h in xrange (0,i-1):
@@ -285,16 +300,15 @@ def a_matrix_gen(A,i,k,rg,gp):
             A[h][h-2-i0] = a1(h-(u+1)*(i-1),gp)
             
             
-def b_matrix_gen(B,b):
-    # Populates the B matrix
+def b_matrix_gen(B,b,gp):
     for u in xrange(0,Nk-3):
-        for h in xrange(0,(Ni-1)*(Nk-2)):
-            if 0 <= h < Ni-1:
-                B[h][h] = b(h)
-            if u*(Ni-1) <= h <= u*(Ni-1) + (Ni-2):
-                B[h][h] = b((h-(u)*(Ni-1)))
-            if (Ni-1)*(Nk-2)-Ni+1 <= h < (Ni-1)*(Nk-2):
-                B[h][h] = b(h-(u+1)*(Ni-1))
+        for h in xrange(0,(Nitot-1)*(Nk-2)):
+            if 0 <= h < Nitot-1:
+                B[h][h] = b(h,gp)
+            if u*(Nitot-1) <= h <= u*(Nitot-1) + (Nitot-2):
+                B[h][h] = b((h-(u)*(Nitot-1)),gp)
+            if (Nitot-1)*(Nk-2)-Nitot+1 <= h < (Nitot-1)*(Nk-2):
+                B[h][h] = b(h-(u+1)*(Nitot-1),gp)
 
 #####################################################################
 # Main program 
@@ -323,20 +337,20 @@ FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BD_,rad,"FuelB")
 FuelC = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"FuelC")
 Water = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"Water")
 
-LoadingPattern = [FuelA,Water]
+LoadingPattern = [FuelA,FuelB,FuelC]
 
 Z = 100.0  # height of the reactor
 R_1 = 60.0  # radious of the reactor
 R_2 = 20.0 # radious of the reflector
-Ni,Nii,Nitot = MeshGeneration(4,0)
+Ni,Nii,Nitot = MeshGeneration(4,4)
 Nk = 6
-i0 = Nitot - 2
+i0 = Nitot - 3
 
 num_row_r1 = (Nitot-1)*(Nk-2)
 num_col_r1 = (Nitot-1)*(Nk-2)
 
 delR_1 = FuelRegionLength(LoadingPattern)/(Ni-1)
-#delR_2 = R_2/(Nii)
+delR_2 = R_2/(Nii)
 delZ = Z/Nk
 
 
@@ -346,17 +360,17 @@ A_t = np.zeros(shape=(num_row_r1,num_col_r1))
 
 a_matrix_gen(A_f,Nitot,Nk,1,"fast")
 a_matrix_gen(A_t,Nitot,Nk,1,"thermal")
-"""
+
 
 # B matrix
 B_fis_f = np.zeros(shape=(num_row_r1,num_col_r1))
 B_fis_t = np.zeros(shape=(num_row_r1,num_col_r1))
-B_source_t = np.zeros(shape=(num_row_r1,num_col_r1))
-# Populates the B matrix
+B_down_t = np.zeros(shape=(num_row_r1,num_col_r1))
 
-b_matrix_gen(B_fis_f,b_fis_fast)
-b_matrix_gen(B_fis_t,b_fis_therm)
-b_matrix_gen(B_source_t,b_source_therm)
+# Populates the B matrix
+b_matrix_gen(B_fis_f,b_fis_term,'fast')
+b_matrix_gen(B_fis_t,b_fis_term,'thermal')
+b_matrix_gen(B_down_t,b_down_term,'thermal')
 
 
 # Solves the actual problem
@@ -367,7 +381,7 @@ fluxF = np.ones(shape=(num_row_r1,1))
     
 # Source term
 k = 1
-ST = (1/k)*(B_source_t.dot(fluxF))
+ST = (1/k)*(B_down_t.dot(fluxF))
 SF = (1/k)*(B_fis_t.dot(fluxT) + B_fis_f.dot(fluxF))
 
 # Iterations
@@ -385,7 +399,7 @@ while(fluxdiff > 0.001):
     fluxF = np.linalg.inv(A_f).dot(oldSF)
     fluxT = np.linalg.inv(A_t).dot(oldST)
     SF = (1/k)*(B_fis_t.dot(fluxT) + B_fis_f.dot(fluxF))
-    ST = (1/k)*(B_source_t.dot(fluxF))
+    ST = (1/k)*(B_down_t.dot(fluxF))
     k = oldk*(np.sum(SF)/np.sum(oldSF))
     
     fluxdiff = 0
@@ -394,7 +408,6 @@ while(fluxdiff > 0.001):
         fluxdiff = fluxdiff + ((fluxF[i][0] - (oldfluxF[i][0]))**2)
         fluxdiff = fluxdiff**0.5
     j = j + 1
-    print fluxdiff
 
 
 # Normalize
@@ -403,7 +416,7 @@ fluxF = fluxF/total
 
 print j
 print k
-
+"""
 x = np.arange(0,R_1 + R_2-delR_1-delR_2,delR_1+delR_2)
 print x
 y = np.arange(delZ,Z-delZ,delZ)
