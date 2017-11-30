@@ -14,13 +14,18 @@ from mpl_toolkits.mplot3d import Axes3D
 # Material class for calling material properties
 #####################################################################
 class Material(object):
-
-    def __init__(self,sigTr,siga,vsig,D,radius,element):
+	# Takes in a list of values for each fuel element. The list 
+	# contains two values. The value of interest for each group
+	# Example: D[(fast value),(thermal value)]. The order is 
+	# fast then thermal. The element attribute is something I added
+	# to help test and make sure GetMaterial was return the right
+	# values. This can be removed. 
+    def __init__(self,sigTr,siga,vsig,D,diameter,element):
         self.sigTr_ = sigTr
         self.siga_ = siga
         self.vsig_ = vsig
         self.D_ = D
-        self.radius = radius
+        self.diameter = diameter
         self.element = element
 
     def __str__(self):
@@ -58,6 +63,10 @@ class Material(object):
 #####################################################################
 # Functions used in the progrm 
 #####################################################################
+
+# Input: the node location in the i direction (r direction). Index 
+# at 0. 
+# Output: The distance from the center at that node. AKA the length. 
 def r(i):
     x = i*delR_1
     x2 = i*delR_2
@@ -67,19 +76,23 @@ def r(i):
         return R_1 + (i-Ni+1)*delR_2
 
 # Function that returns the material or materials given node i
-# Uses the r function to return a system radius value. Heart of
-# the program
+# Uses the r function to return a system diameter value. 
 def GetMaterial(i):
-    r_ = []
+    r_ = [] # holdes values for the lenght of each fuel element
     temp = 0.0
     InterfaceValues = []
     NumberOfFuelElements = len(LoadingPattern)
 
+    # Sets up the arrays to be used. r_ holds the length of each
+    # fuel element. InterfaceValues holds the values for all 
+    # interfaces in the system
     for k in xrange(NumberOfFuelElements):
-        temp = temp + LoadingPattern[k].radius
-        r_.append(LoadingPattern[k].radius)
+        temp = temp + LoadingPattern[k].diameter
+        r_.append(LoadingPattern[k].diameter)
         InterfaceValues.append(temp)
 
+    # Returns the what fuel element you are in for a 
+    # non interface value
     for n,k in enumerate(InterfaceValues):
         if r(i) < r_[0]:
             return LoadingPattern[0]
@@ -88,7 +101,10 @@ def GetMaterial(i):
         if r(i) > max(InterfaceValues):
             return Water
 
+    # Returns two values at an interface node. The first is the 
+    # material on the left, second is the material on the right. 
     for n,k in enumerate(InterfaceValues):
+    	# Added to fix if the user only addes one fuel element
         if r(i) == InterfaceValues[0] and len(LoadingPattern) == 1:
             return LoadingPattern[0],Water
         if r(i) == InterfaceValues[0]:
@@ -98,13 +114,16 @@ def GetMaterial(i):
         if r(i) == max(InterfaceValues):
             return LoadingPattern[(len(InterfaceValues)-1)],Water
 
+# Input: Node in the i direction. 
+# Output: True or false logical to weither the node is at an 
+# interface or not. 
 def IsInterface(i):
     InterfaceValues = []
     Interface = False
     temp = 0.0
     NumberOfFuelElements = len(LoadingPattern)
     for k in xrange(NumberOfFuelElements):
-        temp = temp + LoadingPattern[k].radius
+        temp = temp + LoadingPattern[k].diameter
         InterfaceValues.append(temp)
 
     for k in InterfaceValues:
@@ -113,17 +132,20 @@ def IsInterface(i):
 
     return Interface
 
+# Calculates the total length of the fuel region. 
 def FuelRegionLength(LoadingPattern):
     temp = 0.0
     NumberOfFuelElements = len(LoadingPattern)
 
     for k in xrange(NumberOfFuelElements):
-        temp = temp + LoadingPattern[k].radius
+        temp = temp + LoadingPattern[k].diameter
     return temp 
 
-def MeshGeneration(NumberOfCellsFuelElementRadius,NumberOfCellsWaterRadius):
-    cE = NumberOfCellsFuelElementRadius
-    cW = NumberOfCellsWaterRadius
+# Input is the number of mesh cells for each fuel element!!!
+# returns the correct number of nodes. 
+def MeshGeneration(NumberOfCellsFuelElementdiameter,NumberOfCellsWaterdiameter):
+    cE = NumberOfCellsFuelElementdiameter
+    cW = NumberOfCellsWaterdiameter
 
     Ni = len(LoadingPattern)*cE + 1 #Number of nodes in fuel region. Includes 
     # fuel water interface
@@ -133,6 +155,7 @@ def MeshGeneration(NumberOfCellsFuelElementRadius,NumberOfCellsWaterRadius):
 
     return Ni,Nii,Nitot
 
+# All the functions used in the A matrix generation. 
 def a1(i,gp):
     if IsInterface(i) == False:
         material = GetMaterial(i)
@@ -236,8 +259,11 @@ def b_down_term(i,gp):
         sigTr2 = Rightmaterial.GetsigTr(i,gp)
         return sigTr1*delZ**2*r(i)*delR_1**2 + sigTr2*delZ**2*r(i)*delR_2**2
 
-
-def a_matrix_gen(A,i,k,rg,gp):
+# Takes in the A matrix and fills in its values. Note its very messy 
+# but i think it works. 
+def a_matrix_gen(A,i,k,gp):
+	# Loops through the bottom nodes in the problem. Sweeps from 
+	# center of reactor out. 
     for h in xrange (0,i-1):
         if h == 0:
             A[h][0] = a3(h,gp)
@@ -254,7 +280,8 @@ def a_matrix_gen(A,i,k,rg,gp):
             A[h][h+2+i0] = a5(h,gp)
             
 # Generates part 2 of the a matrix
-
+# These are the rows that are sandwitched between the bottom row
+# and the top row. 
     oldu = 0
     for u in xrange(0,k-3):
         for h in xrange(u*(i-1),u*(i-1) + (i-1)):
@@ -281,7 +308,7 @@ def a_matrix_gen(A,i,k,rg,gp):
                 
         oldu = u
 
-# Generates part 3 of the matrix
+# Generates part 3 of the matrix. The top row of values at Z = totalZ
     for h in xrange((i-1)*(k-2)-i+1,(i-1)*(k-2)):
         if h == (i-1)*(k-2)-i+1:
             A[h][h] = a3(h-(u+1)*(i-1),gp)
@@ -299,7 +326,7 @@ def a_matrix_gen(A,i,k,rg,gp):
             A[h][h-1] = a2(h-(u+1)*(i-1),gp)
             A[h][h-2-i0] = a1(h-(u+1)*(i-1),gp)
             
-            
+# Same thing as A matrix but for B. 
 def b_matrix_gen(B,b,gp):
     for u in xrange(0,Nk-3):
         for h in xrange(0,(Nitot-1)*(Nk-2)):
@@ -314,29 +341,34 @@ def b_matrix_gen(B,b,gp):
 # Main program 
 #####################################################################
 
+
+# System properties. I put dummy variables in here.
 AsigTr_ = [3.62e-2,0.0494]
 Asiga_ = [0.01207,0.0004]
 Avsig_ = [0.008476,0.18514]
 AD_ = [1.2627,1.13]
-rad = 20.0
+dia = 20.0
 
 BsigTr_ = [3.62e-2,0.0494]
 Bsiga_ = [0.01207,0.0004]
 Bvsig_ = [0.008476,0.18514]
 BD_ = [1.2627,1.13]
-rad = 20.0
+dia = 20.0
 
 CsigTr_ = [3.62e-2,0.0494]
 Csiga_ = [0.01207,0.0004]
 Cvsig_ = [0.008476,0.18514]
 CD_ = [1.2627,1.13]
-rad = 20.0
+dia = 20.0
 
-FuelA = Material(AsigTr_,Asiga_,Avsig_,AD_,rad,"FuelA")
-FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BD_,rad,"FuelB")
-FuelC = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"FuelC")
-Water = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"Water")
+FuelA = Material(AsigTr_,Asiga_,Avsig_,AD_,dia,"FuelA")
+FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BD_,dia,"FuelB")
+FuelC = Material(CsigTr_,Csiga_,Cvsig_,CD_,dia,"FuelC")
+Water = Material(CsigTr_,Csiga_,Cvsig_,CD_,dia,"Water")
 
+# Loading patter for fuel region. Note that this does include water
+# if you want to only do one fuel element for the whole core
+# LoadingPattern = [FuelX]. MeshGeneration(X,0). delR_2 = 0.0
 LoadingPattern = [FuelA,FuelB,FuelC]
 
 Z = 100.0  # height of the reactor
@@ -344,7 +376,8 @@ R_1 = 60.0  # radious of the reactor
 R_2 = 20.0 # radious of the reflector
 Ni,Nii,Nitot = MeshGeneration(4,4)
 Nk = 6
-i0 = Nitot - 3
+i0 = Nitot - 3 # This is the number of Zeros between the main
+			   # triple diagional and the offset diagional
 
 num_row_r1 = (Nitot-1)*(Nk-2)
 num_col_r1 = (Nitot-1)*(Nk-2)
@@ -353,13 +386,12 @@ delR_1 = FuelRegionLength(LoadingPattern)/(Ni-1)
 delR_2 = R_2/(Nii)
 delZ = Z/Nk
 
-
 # A matrix
 A_f = np.zeros(shape=(num_row_r1,num_col_r1))
 A_t = np.zeros(shape=(num_row_r1,num_col_r1))
 
-a_matrix_gen(A_f,Nitot,Nk,1,"fast")
-a_matrix_gen(A_t,Nitot,Nk,1,"thermal")
+a_matrix_gen(A_f,Nitot,Nk,"fast")
+a_matrix_gen(A_t,Nitot,Nk,"thermal")
 
 
 # B matrix
