@@ -162,11 +162,9 @@ def a3(i,gp):
     if IsInterface(i) == False:
         material = GetMaterial(i)
         if r(i) == 0:
-            #return 3
             return material.Getsiga(i,gp)*((delR_1**3)/8)*(delZ**2) + 2*material.GetD(i,gp)*(delR_1**3)/8 + material.GetD(i,gp)*(delR_1/2)*delZ**2
         elif 0 < r(i) < R_1 or r(i) > R_1:
-            #return 3
-            return material.Getsiga(i,gp)*r(i)*delR_1**2*delZ**2 + 2*material.GetD(i,gp)*r(i)*delR_1**2 + 2*material.GetD(i,gp)*r(i)*delZ**2 #check this equation
+            return material.Getsiga(i,gp)*r(i)*delR_1**2*delZ**2 + 2*material.GetD(i,gp)*r(i)*delR_1**2 + 2*material.GetD(i,gp)*r(i)*delZ**2 
     elif IsInterface(i) == True:
         Leftmaterial,Rightmaterial = GetMaterial(i)
         D1 = Leftmaterial.GetD(i,gp)
@@ -181,10 +179,8 @@ def a4(i,gp):
     if IsInterface(i) == False:
         material = GetMaterial(i)
         if r(i) == 0:
-            #return 4
             return -material.GetD(i,gp)*(delR_1/2)*delZ**2
         elif (0 < r(i) < R_1 or r(i) > R_1):
-            #return 4
             return -material.GetD(i,gp)*(r(i) + delR_1/2)*delZ**2
     elif IsInterface(i) == True:
         Leftmaterial,Rightmaterial = GetMaterial(i)
@@ -327,20 +323,20 @@ FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BD_,rad,"FuelB")
 FuelC = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"FuelC")
 Water = Material(CsigTr_,Csiga_,Cvsig_,CD_,rad,"Water")
 
-LoadingPattern = [FuelA,FuelB,FuelC]
+LoadingPattern = [FuelA,Water]
 
 Z = 100.0  # height of the reactor
 R_1 = 60.0  # radious of the reactor
 R_2 = 20.0 # radious of the reflector
-Ni,Nii,Nitot = MeshGeneration(2,4)
+Ni,Nii,Nitot = MeshGeneration(4,0)
 Nk = 6
-i0 = Nitot
+i0 = Nitot - 2
 
 num_row_r1 = (Nitot-1)*(Nk-2)
 num_col_r1 = (Nitot-1)*(Nk-2)
 
 delR_1 = FuelRegionLength(LoadingPattern)/(Ni-1)
-delR_2 = R_2/(Nii)
+#delR_2 = R_2/(Nii)
 delZ = Z/Nk
 
 
@@ -348,8 +344,8 @@ delZ = Z/Nk
 A_f = np.zeros(shape=(num_row_r1,num_col_r1))
 A_t = np.zeros(shape=(num_row_r1,num_col_r1))
 
-a_matrix_gen(A_f,Ni,Nk,1,"fast")
-a_matrix_gen(A_t,Ni,Nk,1,"thermal")
+a_matrix_gen(A_f,Nitot,Nk,1,"fast")
+a_matrix_gen(A_t,Nitot,Nk,1,"thermal")
 """
 
 # B matrix
