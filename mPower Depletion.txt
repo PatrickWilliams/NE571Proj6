@@ -1,0 +1,284 @@
+*******************************************************************************
+ *                                                                             *
+ *                                 SCALE 6.2.2                                 *
+ *                                -------------                                *
+ *                                December 2017                                *
+ *                                                                             *
+ *           SCALE:  A Comprehensive Modeling and Simulation Suite             *
+ *                   for Nuclear Safety Analysis and Design                    *
+ *                                                                             *
+ *                      Reactor and Nuclear Systems Division                   *
+ *                        Oak Ridge National Laboratory                        *
+ *                                                                             *
+ *                           http://scale.ornl.gov                             *
+ *                            scalehelp@ornl.gov                               *
+ *                                                                             *
+ *******************************************************************************
+ *******************************************************************************
+      
+                  Job Information
+                  ---------------
+      Job started on node28 on Tue 05/12/2017 23:45:47
+      Working directory: /tmp/scale.astanfo6.23316
+      Input file name  : /home/astanfo6/NE571/NuScaleDepletion.inp
+      Output file name : /home/astanfo6/NE571/NuScaleDepletion.out
+      SCALE executable : /opt/scale6.2.2/bin/../bin/scale
+      
+ *******************************************************************************
+
+
+    module polaris will be called on Tue Dec  5 23:45:50 2017.
+    sequence specification record:=polaris
+Input Data:
+
+      %--------------------------------------%
+      % general options
+      %--------------------------------------%
+      title "SMR NuScale"
+      lib "v7-56"  %v7-252 is default
+      system PWR
+      %--------------------------------------%
+      % geometry
+      %--------------------------------------%
+      geom W17 : ASSM 17 1.26 SE 
+      hgap 0.04
+      %--------------------------------------%
+      % comps and mats
+      %--------------------------------------%
+      comp uox31 : UOX 4.95
+      mat FUEL.1 : uox31 10.26
+      %--------------------------------------%
+      % pins
+      %--------------------------------------%
+      pin F : 0.4096 0.418 0.475 
+            : FUEL.1 GAP.1 CLAD.1
+      pin I : 0.559   0.605 
+            : COOL.1  CLAD.1
+      pin G : 0.561   0.602 
+            : COOL.1  CLAD.1
+      %--------------------------------------%
+      % maps
+      %--------------------------------------%
+      pinmap
+      I
+      F F
+      F F F
+      G F F G
+      F F F F F
+      F F F F F G
+      G F F G F F F
+      F F F F F F F F
+      F F F F F F F F F
+      %--------------------------------------%
+      % state
+      %--------------------------------------%
+      pow             530 530 530 530
+      bu GWD/MTIHM :  0   15  30  45
+      
+end
+
+
+
+--------------------------------------------------
+Statepoint 1
+--------------------------------------------------
+     Transport: k-eff =  1.44551
+     Transport: eta   =  1.87932
+     Transport: f     =  0.94479
+     Transport: p     =  0.66094
+     Transport: eps   =  1.23174
+     Transport: k-inf =  1.44551
+     Transport: P_fnl =  1.00000
+     Transport: P_tnl =  1.00000
+
+
+ |Broad|  Upper   |  Lower   |# of Fine|
+ |Group|Energy(eV)|Energy(eV)| Groups  |
+ |-----|----------|----------|---------|
+ |   1 | 2.000E+07| 6.250E-01|    40   |
+ |   2 | 6.250E-01| 1.000E-05|    16   |
+
+ Homogenization Region 1: 'W17'
+ ----------------------------------------------------------------
+
+  W17 k-inf =  1.44034
+
+  Macroscopic Cross Sections
+  --------------------------
+
+  |Group |          |          |          |          |   Eff    |  Kappa-  |
+  |  #   |   Flux   |  Total   |Transport | Removal  |   Abs    |   Abs.   |
+  |------|----------|----------|----------|----------|----------|----------|
+  |   1  | 8.804E-01| 5.317E-01| 2.257E-01| 2.543E-02| 9.941E-03| 1.132E-13|
+  |   2  | 1.196E-01| 1.382E+00| 8.885E-01| 1.114E-01| 1.097E-01| 2.552E-12|
+
+  Fission Macroscopic Cross Sections
+  ----------------------------------
+
+  |Group |  Kappa-  |          |   Nu-    |          |
+  |  #   |   Fis.   | Fission  | Fission  |   Chi    |
+  |------|----------|----------|----------|----------|
+  |   1  | 1.078E-13| 3.452E-03| 8.731E-03| 1.000E+00|
+  |   2  | 2.528E-12| 8.132E-02| 1.981E-01| 2.501E-09|
+
+  Scattering Cross-sections
+  -------------------------
+
+  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |
+  |---|----------|---|----------|---|----------|---|----------|---|----------|
+  |1>2| 1.549E-02|2>1| 1.708E-03|                                               
+
+
+
+--------------------------------------------------
+Statepoint 2
+--------------------------------------------------
+     Transport: k-eff =  1.21084
+     Transport: eta   =  1.54937
+     Transport: f     =  0.95012
+     Transport: p     =  0.66148
+     Transport: eps   =  1.24348
+     Transport: k-inf =  1.21084
+     Transport: P_fnl =  1.00000
+     Transport: P_tnl =  1.00000
+
+ ---------------------
+
+ |Broad|  Upper   |  Lower   |# of Fine|
+ |Group|Energy(eV)|Energy(eV)| Groups  |
+ |-----|----------|----------|---------|
+ |   1 | 2.000E+07| 6.250E-01|    40   |
+ |   2 | 6.250E-01| 1.000E-05|    16   |
+
+ Homogenization Region 1: 'W17'
+ ----------------------------------------------------------------
+
+  W17 k-inf =  1.20980
+
+  Macroscopic Cross Sections
+  --------------------------
+
+  |Group |          |          |          |          |   Eff    |  Kappa-  |
+  |  #   |   Flux   |  Total   |Transport | Removal  |   Abs    |   Abs.   |
+  |------|----------|----------|----------|----------|----------|----------|
+  |   1  | 8.865E-01| 5.387E-01| 2.278E-01| 2.632E-02| 1.071E-02| 9.703E-14|
+  |   2  | 1.135E-01| 1.400E+00| 9.094E-01| 1.207E-01| 1.189E-01| 2.336E-12|
+
+  Fission Macroscopic Cross Sections
+  ----------------------------------
+
+  |Group |  Kappa-  |          |   Nu-    |          |
+  |  #   |   Fis.   | Fission  | Fission  |   Chi    |
+  |------|----------|----------|----------|----------|
+  |   1  | 9.049E-14| 2.886E-03| 7.462E-03| 1.000E+00|
+  |   2  | 2.293E-12| 7.319E-02| 1.863E-01| 2.181E-09|
+
+  
+  Scattering Cross-sections
+  -------------------------
+
+  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |
+  |---|----------|---|----------|---|----------|---|----------|---|----------|
+  |1>2| 1.561E-02|2>1| 1.816E-03|                                               
+
+
+--------------------------------------------------
+Statepoint 3
+--------------------------------------------------
+     Transport: k-eff =  1.08749
+     Transport: eta   =  1.39661
+     Transport: f     =  0.94962
+     Transport: p     =  0.66350
+     Transport: eps   =  1.23584
+     Transport: k-inf =  1.08749
+     Transport: P_fnl =  1.00000
+     Transport: P_tnl =  1.00000
+
+ |Broad|  Upper   |  Lower   |# of Fine|
+ |Group|Energy(eV)|Energy(eV)| Groups  |
+ |-----|----------|----------|---------|
+ |   1 | 2.000E+07| 6.250E-01|    40   |
+ |   2 | 6.250E-01| 1.000E-05|    16   |
+
+ Homogenization Region 1: 'W17'
+ ----------------------------------------------------------------
+
+  W17 k-inf =  1.08728
+
+  Macroscopic Cross Sections
+  --------------------------
+
+  |Group |          |          |          |          |   Eff    |  Kappa-  |
+  |  #   |   Flux   |  Total   |Transport | Removal  |   Abs    |   Abs.   |
+  |------|----------|----------|----------|----------|----------|----------|
+  |   1  | 8.827E-01| 5.435E-01| 2.293E-01| 2.685E-02| 1.124E-02| 8.366E-14|
+  |   2  | 1.173E-01| 1.403E+00| 9.185E-01| 1.170E-01| 1.152E-01| 2.072E-12|
+
+  Fission Macroscopic Cross Sections
+  ----------------------------------
+
+  |Group |  Kappa-  |          |   Nu-    |          |
+  |  #   |   Fis.   | Fission  | Fission  |   Chi    |
+  |------|----------|----------|----------|----------|
+  |   1  | 7.624E-14| 2.421E-03| 6.410E-03| 1.000E+00|
+  |   2  | 2.024E-12| 6.417E-02| 1.688E-01| 1.981E-09|
+
+
+  Scattering Cross-sections
+  -------------------------
+
+  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |
+  |---|----------|---|----------|---|----------|---|----------|---|----------|
+  |1>2| 1.561E-02|2>1| 1.749E-03|                                               
+
+
+--------------------------------------------------
+Statepoint 4
+--------------------------------------------------
+     Transport: k-eff =  0.97696
+     Transport: eta   =  1.26147
+     Transport: f     =  0.94699
+     Transport: p     =  0.66644
+     Transport: eps   =  1.22714
+     Transport: k-inf =  0.97696
+     Transport: P_fnl =  1.00000
+     Transport: P_tnl =  1.00000
+
+
+ |Broad|  Upper   |  Lower   |# of Fine|
+ |Group|Energy(eV)|Energy(eV)| Groups  |
+ |-----|----------|----------|---------|
+ |   1 | 2.000E+07| 6.250E-01|    40   |
+ |   2 | 6.250E-01| 1.000E-05|    16   |
+
+ Homogenization Region 1: 'W17'
+ ----------------------------------------------------------------
+
+  W17 k-inf =  0.97696
+
+  Macroscopic Cross Sections
+  --------------------------
+
+  |Group |          |          |          |          |   Eff    |  Kappa-  |
+  |  #   |   Flux   |  Total   |Transport | Removal  |   Abs    |   Abs.   |
+  |------|----------|----------|----------|----------|----------|----------|
+  |   1  | 8.740E-01| 5.480E-01| 2.307E-01| 2.737E-02| 1.166E-02| 7.235E-14|
+  |   2  | 1.260E-01| 1.401E+00| 9.227E-01| 1.091E-01| 1.075E-01| 1.762E-12|
+
+  Fission Macroscopic Cross Sections
+  ----------------------------------
+
+  |Group |  Kappa-  |          |   Nu-    |          |
+  |  #   |   Fis.   | Fission  | Fission  |   Chi    |
+  |------|----------|----------|----------|----------|
+  |   1  | 6.419E-14| 2.030E-03| 5.500E-03| 1.000E+00|
+  |   2  | 1.711E-12| 5.396E-02| 1.459E-01| 1.844E-09|
+
+
+  Scattering Cross-sections
+  -------------------------
+
+  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |
+  |---|----------|---|----------|---|----------|---|----------|---|----------|
+  |1>2| 1.571E-02|2>1| 1.625E-03|                                               
+
