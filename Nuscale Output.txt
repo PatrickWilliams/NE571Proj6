@@ -1,0 +1,50 @@
+ Homogenization Region 1: 'W17'
+ ----------------------------------------------------------------
+
+  W17 k-inf =  1.29277
+
+  Macroscopic Cross Sections
+  --------------------------
+
+  |Group |          |          |          |          |   Eff    |  Kappa-  |
+  |  #   |   Flux   |  Total   |Transport | Removal  |   Abs    |   Abs.   |
+  |------|----------|----------|----------|----------|----------|----------|
+  |   1  | 8.881E-01| 5.348E-01| 2.267E-01| 2.614E-02| 1.053E-02| 1.145E-13|
+  |   2  | 1.119E-01| 1.374E+00| 8.814E-01| 1.220E-01| 1.198E-01| 2.485E-12|
+
+  Fission Macroscopic Cross Sections
+  ----------------------------------
+
+  |Group |  Kappa-  |          |   Nu-    |          |
+  |  #   |   Fis.   | Fission  | Fission  |   Chi    |
+  |------|----------|----------|----------|----------|
+  |   1  | 1.087E-13| 3.481E-03| 8.800E-03| 1.000E+00|
+  |   2  | 2.456E-12| 7.900E-02| 1.925E-01| 2.521E-09|
+
+  Isotope Quantities
+  ------------------
+
+   I-135 Concentration                = 3.0102E-21
+  Xe-135 Concentration                = 3.0102E-21
+  Pm-149 Concentration                = 3.0102E-21
+  Sm-149 Concentration                = 3.0102E-21
+
+  Xe-135 Macro Abs XS                 = 4.1298E-16
+  Sm-149 Macro Abs XS                 = 1.2944E-17
+
+   U-235 Concentration                = 3.4526E-04
+   U-238 Concentration                = 6.5413E-03
+  Pu-239 Concentration                = 3.0102E-21
+  Pu-241 Concentration                = 3.0102E-21
+
+   U-235 Macro Fis XS                 = 1.1222E-02
+   U-238 Macro Fis XS                 = 7.0902E-04
+  Pu-239 Macro Fis XS                 = 2.6712E-19
+  Pu-241 Macro Fis XS                 = 2.6730E-19
+
+  Scattering Cross-sections
+  -------------------------
+
+  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |G>G| Scatter  |
+  |---|----------|---|----------|---|----------|---|----------|---|----------|
+  |1>2| 1.561E-02|2>1| 2.216E-03|  
