@@ -20,18 +20,18 @@ class Material(object):
 	# fast then thermal. The element attribute is something I added
 	# to help test and make sure GetMaterial was return the right
 	# values. This can be removed. 
-    def __init__(self,sigTr,siga,vsig,sigS,D,diameter,element):
+    def __init__(self,sigTr,siga,vsig,sigS,D,diameter,delR):
         self.sigTr_ = sigTr
         self.siga_ = siga
         self.vsig_ = vsig
         self.sigS_ = sigS
         self.D_ = D
         self.diameter = diameter
-        self.element = element
+        self.delR = delR
 
     def __str__(self):
-        return self.element
-
+        return self.delR
+    
     def GetD(self,i,gp):
         if gp == "fast":
             D = self.D_[0]
@@ -68,11 +68,11 @@ class Material(object):
 # Output: The distance from the center at that node. AKA the length. 
 def r(i):
     x = i*delR_1
-    x2 = i*delR_2
+    #x2 = i*delR_2
     if x < R_1:
         return x
     elif x >= R_1:
-        return R_1 + (i-Ni+1)*delR_2
+        return R_1 + (i-Ni+1)*delR_1
 
 # Function that returns the material or materials given node i
 # Uses the r function to return a system diameter value. 
@@ -85,7 +85,7 @@ def GetMaterial(i):
     # Sets up the arrays to be used. r_ holds the length of each
     # fuel element. InterfaceValues holds the values for all 
     # interfaces in the system
-    for k in xrange(NumberOfFuelElements):
+    for k in xrange(NumberOfFuelElements-1):
         temp = temp + LoadingPattern[k].diameter
         r_.append(LoadingPattern[k].diameter)
         InterfaceValues.append(temp)
@@ -120,7 +120,7 @@ def IsInterface(i):
     InterfaceValues = []
     Interface = False
     temp = 0.0
-    NumberOfFuelElements = len(LoadingPattern)
+    NumberOfFuelElements = len(LoadingPattern)-1
     for k in xrange(NumberOfFuelElements):
         temp = temp + LoadingPattern[k].diameter
         InterfaceValues.append(temp)
@@ -167,7 +167,7 @@ def a1(i,gp):
         Leftmaterial,Rightmaterial = GetMaterial(i)
         D1 = Leftmaterial.GetD(i,gp)
         D2 = Rightmaterial.GetD(i,gp)
-        return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8))
+        return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_1/2) + (delR_1**2/8))
     
 def a2(i,gp):
     if IsInterface(i) == False:
@@ -204,7 +204,7 @@ def a3(i,gp):
             GG2 = Leftmaterial.GetsigTr(i,gp)
         D1 = Leftmaterial.GetD(i,gp)
         D2 = Rightmaterial.GetD(i,gp)
-        return (D1/delR_1)*(r(i)-delR_1/2)*delZ + (2*D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + GG1*delZ*((r(i)*delR_1/2) + (delR_1**2/8)) + (D2/delR_2)*(r(i)-delR_2/2)*delZ + (2*D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8)) + GG2*delZ*((r(i)*delR_2/2) + (delR_2**2/8))
+        return (D1/delR_1)*(r(i)-delR_1/2)*delZ + (2*D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + GG1*delZ*((r(i)*delR_1/2) + (delR_1**2/8)) + (D2/delR_1)*(r(i)-delR_1/2)*delZ + (2*D2/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + GG2*delZ*((r(i)*delR_1/2) + (delR_1**2/8))
 
 def a4(i,gp):
     if IsInterface(i) == False:
@@ -230,7 +230,7 @@ def a5(i,gp):
         Leftmaterial,Rightmaterial = GetMaterial(i)
         D1 = Leftmaterial.GetD(i,gp)
         D2 = Rightmaterial.GetD(i,gp)
-        return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_2/2) + (delR_2**2/8))
+        return (-D1/delZ)*((r(i)*delR_1/2) + (delR_1**2/8)) + (-D2/delZ)*((r(i)*delR_1/2) + (delR_1**2/8))
       
 def b_fis_term(i,gp):
     if IsInterface(i) == False:
@@ -242,6 +242,7 @@ def b_fis_term(i,gp):
         else:
             return 0.0
     elif IsInterface(i) == True:
+        print i,r(i)
         Leftmaterial,Rightmaterial = GetMaterial(i)
         vsig1 = Leftmaterial.Getvsig(i,gp)
         vsig2 = Rightmaterial.Getvsig(i,gp)
@@ -258,7 +259,7 @@ def b_down_term(i,gp):
         Leftmaterial,Rightmaterial = GetMaterial(i)
         sigTr1 = Leftmaterial.GetsigS(i,gp)
         sigTr2 = Rightmaterial.GetsigS(i,gp)
-        return sigTr1*delZ**2*r(i)*delR_1**2 + sigTr2*delZ**2*r(i)*delR_2**2
+        return sigTr1*delZ**2*r(i)*delR_1**2 + sigTr2*delZ**2*r(i)*delR_1**2
 
 # Takes in the A matrix and fills in its values. Note its very messy 
 # but i think it works. 
@@ -344,48 +345,58 @@ def b_matrix_gen(B,b,gp):
 
 
 # System properties. I put dummy variables in here.
-AsigTr_ = [0.012627]
-Asiga_ = [0.1210]
-Avsig_ = [0.008476,0.18514]
-AsigS_ = [0.02619]
+# k = 1.0873
+AsigTr_ = [0.0269]
+Asiga_ = [0.1152]
+Avsig_ = [0.00641,0.169]
+AsigS_ = [0.015561] # 0.00155
 AD_ = [1.2627,0.3543]
-dia = 18.68
 
-BsigTr_ = [0.010627]
-Bsiga_ = [0.01007]
-Bvsig_ = [0.006476,0.16514]
-BsigS_ = [0.02319]
-BD_ = [1.2427,1.10]
-#dia = 20.0
+# k = 0.977
+BsigTr_ = [0.0274]
+Bsiga_ = [0.108]
+Bvsig_ = [0.0055,0.146]
+BsigS_ = [0.0157]
+BD_ = [1.2427,0.3543]
 
-CsigTr_ = [0.013]
-Csiga_ = [0.013]
-Cvsig_ = [0.0086,0.19]
-CsigS_ = [0.03]
-CD_ = [1.3,1.15]
-#dia = 20.0
+# k = 1.21
+CsigTr_ = [0.0263]
+Csiga_ = [0.119]
+Cvsig_ = [0.00746,0.186]
+CsigS_ = [0.0156]
+CD_ = [1.2627,0.3543]
+
+# k = 1.44
+DsigTr_ = [0.0254]
+Dsiga_ = [0.1097]
+Dvsig_ = [0.00873,0.198]
+DsigS_ = [0.0155]
+DD_ = [1.2627,0.3543]
 
 WsigTr_ = [0.0494]
 Wsiga_ = [0.0197]
 Wvsig_ = [0.0,0.0]
 WsigS_ = [0.0494]
 WD_ = [1.13,0.16]
-#dia = 20.0
 
-FuelA = Material(AsigTr_,Asiga_,Avsig_,AsigS_,AD_,6.0,"FuelA")
-FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BsigS_,BD_,6.0,"FuelB")
-FuelC = Material(CsigTr_,Csiga_,Cvsig_,BsigS_,CD_,6.0,"FuelC")
-Water = Material(WsigTr_,Wsiga_,Wvsig_,WsigS_,WD_,20,"Water")
 
 # Loading patter for fuel region. Note that this does include water
 # if you want to only do one fuel element for the whole core
 # LoadingPattern = [FuelX]. MeshGeneration(X,0). delR_2 = 0.0
-LoadingPattern = [FuelA,FuelB]
 
-Z = 200.0  # height of the reactor
+FuelA = Material(AsigTr_,Asiga_,Avsig_,AsigS_,AD_,18.0,"FuelA")
+FuelB = Material(BsigTr_,Bsiga_,Bvsig_,BsigS_,BD_,18.0,"FuelB")
+FuelC = Material(CsigTr_,Csiga_,Cvsig_,CsigS_,CD_,18.0,"FuelC")
+FuelD = Material(DsigTr_,Dsiga_,Dvsig_,DsigS_,DD_,18.0,"FuelD")
+Water = Material(WsigTr_,Wsiga_,Wvsig_,WsigS_,WD_,15.0,"Water")
+
+#LoadingPattern = [FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelD,FuelB,FuelB,FuelB,FuelB,FuelB,Water,Water,Water,Water]
+LoadingPattern = [FuelB,FuelA,FuelB,FuelC,Water]
+
+Z = 2000.0  # height of the reactor
 R_1 = FuelRegionLength  # radious of the reactor
-R_2 = 5.0 # radious of the reflector
-Ni,Nii,Nitot = MeshGeneration(4,10)
+#R_2 = 5.0 # radious of the reflector
+Ni,Nii,Nitot = MeshGeneration(4,0)
 Nk = 10
 i0 = Nitot - 3 # This is the number of Zeros between the main
 			   # triple diagional and the offset diagional
@@ -393,17 +404,18 @@ i0 = Nitot - 3 # This is the number of Zeros between the main
 num_row_r1 = (Nitot-1)*(Nk-2)
 num_col_r1 = (Nitot-1)*(Nk-2)
 
-delR_1 = FuelRegionLength(LoadingPattern)/(Ni-1)
-delR_2 = R_2/(Nii)
-delZ = Z/Nk
+delR_1 = FuelRegionLength(LoadingPattern)/(Nitot)
 
+delZ = Z/Nk
+for i in xrange(Nitot):
+    print i,r(i)
+    print GetMaterial(i)
 # A matrix
 A_f = np.zeros(shape=(num_row_r1,num_col_r1))
 A_t = np.zeros(shape=(num_row_r1,num_col_r1))
 
 a_matrix_gen(A_f,Nitot,Nk,"fast")
 a_matrix_gen(A_t,Nitot,Nk,"thermal")
-
 
 # B matrix
 B_fis_f = np.zeros(shape=(num_row_r1,num_col_r1))
@@ -469,7 +481,9 @@ for i in xrange(Nitot-1):
 x = xDatapoints
 y = np.arange(delZ,Z-delZ,delZ)
 xx, yy = np.meshgrid(x,y)
+#fig = plt.figure()
 z = np.array((fluxF.reshape(xx.shape)))
+#ax = fig.add_subplot(211, projection='3d')
 ax.plot_surface(xx,yy,z,cmap=plt.cm.rainbow,linewidth=0, antialiased=False)
 ax.set_xlabel('Radius (cm)')
 ax.set_ylabel('Height (cm)')
@@ -484,8 +498,9 @@ bx.set_xlabel('Radius (cm)')
 bx.set_ylabel('Height (cm)')
 plt.draw()
 plt.show()
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+
 """
-
-
-
 
